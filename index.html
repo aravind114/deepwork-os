@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Work OS</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="orb" id="orb1"></div>
+<div class="orb" id="orb2"></div>
+<div class="orb" id="orb3"></div>
+
+<div id="app">
+
+<!-- ═══════════════════════════════════════
+     SCREEN 1 — SETUP (Morning ritual)
+═══════════════════════════════════════ -->
+<div class="screen active" id="setup-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-setup">09:15</div>
+  </div>
+
+  <!-- Step 0: Greeting -->
+  <div class="setup-question" id="step-0">
+    <div class="q-step">Morning ritual · 3 minutes</div>
+    <div class="q-text" id="greeting-text">Good morning.</div>
+    <div class="q-sub">Let's build today intentionally.<br>A few quick questions.</div>
+
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.15em;margin-bottom:10px;text-transform:uppercase">
+        Anthropic API key — powers AI features
+      </div>
+      <div style="position:relative">
+        <input class="q-input" type="password" id="api-key-input"
+          placeholder="sk-ant-..."
+          style="padding-right:90px;font-family:var(--mono);font-size:13px"
+          oninput="onApiKeyInput(this.value)">
+        <div id="api-key-status"
+          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);
+          font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.05em">
+          not set
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6">
+        Get yours at <span style="color:var(--accent-l)">console.anthropic.com</span> → API Keys.<br>
+        Stored in memory only — never saved to disk.
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary btn-lg" onclick="nextStep(1)">Let's go →</button>
+    </div>
+  </div>
+
+  <!-- Step 1: Main task -->
+  <div class="setup-question" id="step-1" style="display:none">
+    <div class="progress-dots">
+      <div class="progress-dot current" id="pd1"></div>
+      <div class="progress-dot" id="pd2"></div>
+      <div class="progress-dot" id="pd3"></div>
+      <div class="progress-dot" id="pd4"></div>
+      <div class="progress-dot" id="pd5"></div>
+    </div>
+    <div class="q-step">Work · Question 1 of 2</div>
+    <div class="q-text">What's your ONE<br>non-negotiable today?</div>
+    <div class="q-sub">If you only complete this, today wins.</div>
+    <div class="input-wrap">
+      <textarea class="q-input" id="main-task-input" rows="2"
+        placeholder="e.g. Analyse duplicate payment transactions..."></textarea>
+    </div>
+    <div class="q-sub" style="margin-bottom:12px">What's the first physical action to start it?</div>
+    <div class="input-wrap">
+      <input class="q-input" id="main-action-input" type="text"
+        placeholder="e.g. Open the payment service codebase">
+    </div>
+
+    <!-- AI breakdown section -->
+    <div style="margin-top:4px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.1em">
+        OR — paste your full task dump and let AI break it down
+      </div>
+      <textarea class="q-input" id="task-dump-input" rows="3"
+        placeholder="e.g. attach debugger and understand workflow&#10;analyse apis for errors&#10;find logging gaps&#10;implement idempotency&#10;follow datadog trace"></textarea>
+
+      <button class="ai-breakdown-btn" onclick="runAIBreakdown()" id="ai-breakdown-btn">
+        <span class="ai-icon">✦</span>
+        <span class="ai-label">Break this down intelligently with AI</span>
+        <span class="ai-arrow">→</span>
+      </button>
+
+      <div class="ai-thinking" id="ai-thinking">
+        <div class="ai-dots">
+          <div class="ai-dot"></div>
+          <div class="ai-dot"></div>
+          <div class="ai-dot"></div>
+        </div>
+        <div class="ai-thinking-text">Analysing task structure, estimating time, sequencing dependencies...</div>
+      </div>
+
+      <div class="ai-error" id="ai-error"></div>
+
+      <!-- Subtask results -->
+      <div id="subtask-results" style="display:none">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:0.1em;margin-top:16px;margin-bottom:4px">
+          ✓ AI breakdown complete — edit or delete any subtask
+        </div>
+        <div id="subtask-list-setup" class="subtask-list"></div>
+        <button class="btn btn-ghost" style="margin-top:10px;width:100%;font-size:12px" onclick="resetBreakdown()">
+          ↺ Clear and use manual task instead
+        </button>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="nextStep(0)">← Back</button>
+      <button class="btn btn-primary" style="flex:1" onclick="nextStep(2)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Supporting tasks -->
+  <div class="setup-question" id="step-2" style="display:none">
+    <div class="progress-dots">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot current"></div>
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="q-step">Work · Question 2 of 2</div>
+    <div class="q-text">Two supporting tasks<br>if you get there.</div>
+    <div class="q-sub">Optional. Don't overthink.</div>
+    <div class="task-list">
+      <div class="task-item">
+        <span class="task-num">02</span>
+        <input type="text" id="task2" placeholder="Supporting task...">
+      </div>
+      <div class="task-item">
+        <span class="task-num">03</span>
+        <input type="text" id="task3" placeholder="Supporting task...">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="nextStep(1)">← Back</button>
+      <button class="btn btn-primary" style="flex:1" onclick="nextStep(3)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Learning -->
+  <div class="setup-question" id="step-3" style="display:none">
+    <div class="progress-dots">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot current"></div>
+      <div class="progress-dot"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="q-step">Learning</div>
+    <div class="q-text">What are you learning<br>today?</div>
+    <div class="q-sub">Continuing AZ-104 with CloudLee?</div>
+    <div class="task-list">
+      <div class="task-item">
+        <span class="task-num">📚</span>
+        <input type="text" id="learn-task" placeholder="e.g. AZ-104 Lessons 7 & 8 — CloudLee" value="AZ-104 with CloudLee">
+      </div>
+    </div>
+    <div class="q-sub" style="margin-bottom:12px;margin-top:8px">Starting from which lesson?</div>
+    <div class="input-wrap">
+      <input class="q-input" id="learn-lesson" type="text" placeholder="e.g. Lesson 7">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="nextStep(2)">← Back</button>
+      <button class="btn btn-primary" style="flex:1" onclick="nextStep(4)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Personal tasks -->
+  <div class="setup-question" id="step-4" style="display:none">
+    <div class="progress-dots">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot current"></div>
+      <div class="progress-dot"></div>
+    </div>
+    <div class="q-step">Personal tasks</div>
+    <div class="q-text">Any personal tasks<br>today?</div>
+    <div class="q-sub">Calls, payments, follow-ups. What needs doing?</div>
+    <div class="task-list" id="personal-task-list">
+      <div class="task-item">
+        <span class="task-num">→</span>
+        <input type="text" class="personal-input" placeholder="e.g. Pay PAYG for self, wife, company">
+      </div>
+      <div class="task-item">
+        <span class="task-num">→</span>
+        <input type="text" class="personal-input" placeholder="e.g. Call accountant — ask about strategy">
+      </div>
+      <div class="task-item">
+        <span class="task-num">→</span>
+        <input type="text" class="personal-input" placeholder="e.g. Call Prabha re houseplan">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="nextStep(3)">← Back</button>
+      <button class="btn btn-primary" style="flex:1" onclick="nextStep(5)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Confirm -->
+  <div class="setup-question" id="step-5" style="display:none">
+    <div class="progress-dots">
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot done"></div>
+      <div class="progress-dot current"></div>
+    </div>
+    <div class="q-step">Today's plan</div>
+    <div class="q-text">Here's your day.</div>
+    <div id="day-preview" style="margin-bottom:32px"></div>
+    <button class="btn btn-start btn-lg" onclick="startDay()">Begin today →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 2 — FOCUS (Main work screen)
+═══════════════════════════════════════ -->
+<div class="screen" id="focus-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-focus">10:40</div>
+  </div>
+
+  <!-- Schedule bar -->
+  <div class="schedule-bar" id="schedule-bar"></div>
+
+  <!-- Mode + time left -->
+  <div class="focus-mode-row" style="margin-bottom:32px">
+    <div id="focus-mode-badge"></div>
+    <div class="focus-until" id="focus-until-text"></div>
+  </div>
+
+  <!-- Center: task + timer -->
+  <div class="focus-center">
+    <div class="session-log" id="session-log"></div>
+
+    <!-- Subtask progress (shown when AI breakdown exists) -->
+    <div class="subtask-progress" id="subtask-progress" style="display:none">
+      <div class="subtask-progress-label">Investigation plan</div>
+      <div class="subtask-progress-items" id="subtask-progress-items"></div>
+    </div>
+
+    <div class="focus-task-label">current task</div>
+    <div class="focus-task-name" id="focus-task-name">—</div>
+    <div class="focus-first-action" id="focus-first-action">→ Open the file</div>
+
+    <div class="timer-ring-wrap">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle class="timer-track" cx="100" cy="100" r="90"/>
+        <circle class="timer-fill" id="timer-ring" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-big" id="timer-display">25:00</div>
+        <div class="timer-label" id="timer-sublabel">focus</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="focus-actions">
+    <button class="btn btn-ghost" onclick="takingBreak()" id="break-btn">Take break</button>
+    <button class="btn btn-primary" style="flex:2" onclick="toggleTimer()" id="main-action-btn">
+      ▶ Start session
+    </button>
+    <button class="btn btn-ghost" onclick="completeSession()" id="done-btn">✓ Done</button>
+  </div>
+  <div class="slash-hint" id="slash-hint">press / to log a thought</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 3 — BREAK (The container)
+═══════════════════════════════════════ -->
+<div class="screen" id="break-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-break">—</div>
+  </div>
+
+  <div class="break-top">
+    <div class="break-heading" id="break-mode-label">Break</div>
+    <div class="break-sub" id="break-sub-text">YOU EARNED THIS · RELAX</div>
+  </div>
+
+  <div class="break-center">
+    <div class="break-timer-big" id="break-timer-display">10:00</div>
+    <div style="width:100%">
+      <div class="break-progress-bar">
+        <div class="break-progress-fill" id="break-progress"></div>
+      </div>
+    </div>
+
+    <!-- Re-entry question (appears at 2 mins) -->
+    <div class="reentry-box" id="reentry-box">
+      <div class="reentry-label">Almost time</div>
+      <div class="reentry-q">What's your first action<br>when you return?</div>
+      <input class="reentry-input" id="reentry-input" type="text"
+        placeholder="Type something specific — open a file, write one line...">
+    </div>
+  </div>
+
+  <div class="break-bottom">
+    <button class="btn btn-start btn-lg" id="end-break-btn" onclick="endBreak()" style="display:none">
+      I'm ready. Return to work →
+    </button>
+    <button class="btn btn-ghost btn-lg" id="extend-btn" onclick="extendBreak()">
+      + 5 more minutes (once only)
+    </button>
+    <div class="extend-note" id="extend-note">Break ends automatically when timer hits zero.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 4 — TAKEOVER (Break ended)
+═══════════════════════════════════════ -->
+<div class="screen" id="takeover-screen">
+  <div class="takeover-wrap">
+    <div class="takeover-label">Break is over. Time to return.</div>
+    <div class="takeover-action" id="takeover-action-text">Open the file.</div>
+    <button class="takeover-begin" onclick="returnFromBreak()">I'm ready. Begin. →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 5 — DEBRIEF (End of day)
+═══════════════════════════════════════ -->
+<div class="screen" id="debrief-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-debrief">17:00</div>
+  </div>
+
+  <div class="scroll-content">
+    <div class="today-label" id="debrief-date-label">Today</div>
+    <div class="today-date">Day complete.</div>
+
+    <div class="debrief-section">
+      <div class="debrief-label">What happened</div>
+      <div class="debrief-stat-row">
+        <div class="debrief-stat">
+          <div class="debrief-stat-val" id="stat-deep" style="color:var(--accent-l)">—</div>
+          <div class="debrief-stat-key">Deep work</div>
+        </div>
+        <div class="debrief-stat">
+          <div class="debrief-stat-val" id="stat-drift" style="color:var(--gold)">—</div>
+          <div class="debrief-stat-key">Drift time</div>
+        </div>
+        <div class="debrief-stat">
+          <div class="debrief-stat-val" id="stat-sessions" style="color:var(--green)">—</div>
+          <div class="debrief-stat-key">Sessions</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="debrief-section">
+      <div class="debrief-label">Tasks</div>
+      <div class="tasks-done-list" id="tasks-done-list"></div>
+    </div>
+
+    <div class="debrief-section">
+      <div class="debrief-label">Honest take</div>
+      <div class="debrief-narrative" id="debrief-narrative">—</div>
+    </div>
+
+    <div class="debrief-section">
+      <div class="debrief-tomorrow">
+        <div class="debrief-tomorrow-label">One thing tomorrow</div>
+        <div class="debrief-tomorrow-text" id="debrief-tomorrow">—</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-ghost btn-lg" onclick="resetDay()">Start tomorrow fresh →</button>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<!-- ═══════════════════════════════════════
+     QUICK CAPTURE OVERLAY (/ key)
+═══════════════════════════════════════ -->
+<div class="quick-capture-overlay" id="qc-overlay" onclick="closeQCIfOutside(event)">
+  <div class="quick-capture-box" id="qc-box">
+    <div class="qc-header">
+      <div class="qc-task-tag" id="qc-task-tag">Current task</div>
+      <div class="qc-hint">ESC to close</div>
+    </div>
+    <textarea class="qc-input" id="qc-input" rows="2"
+      placeholder="Type a finding, thought, or how you're feeling..."></textarea>
+    <div class="qc-footer">
+      <div class="qc-processing" id="qc-processing" style="display:none">
+        <div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>
+        correcting...
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="qc-status">Enter to log · AI will clean it up</div>
+      <div class="qc-actions">
+        <button class="qc-btn" onclick="closeQC()">Cancel</button>
+        <button class="qc-btn primary" onclick="submitQC()">Log it →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECK-IN PULSE -->
+<div class="checkin-pulse" id="checkin-pulse">
+  <div class="checkin-q" id="checkin-q">How's it going?</div>
+  <div class="checkin-btns">
+    <button class="checkin-btn green" onclick="checkinRespond('on-track')">✓ On track</button>
+    <button class="checkin-btn amber" onclick="checkinRespond('progress')">↗ Progress</button>
+    <button class="checkin-btn red"   onclick="checkinRespond('stuck')">⚡ Stuck</button>
+  </div>
+  <div class="stuck-response" id="stuck-response"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 6 — LOGBOOK
+═══════════════════════════════════════ -->
+<div class="screen" id="logbook-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-logbook">—</div>
+  </div>
+  <div class="logbook-tabs">
+    <div class="logbook-tab active" onclick="switchLogTab('today')" id="ltab-today">Today</div>
+    <div class="logbook-tab" onclick="switchLogTab('all')" id="ltab-all">All tasks</div>
+  </div>
+  <div class="logbook-task-name" id="logbook-task-name">Working log</div>
+  <div class="logbook-meta" id="logbook-meta">—</div>
+  <div class="scroll-content">
+    <div class="log-feed" id="log-feed"></div>
+    <button class="logbook-copy-btn" onclick="copyLogToClipboard()">
+      ⎘ Copy log as text — paste into Jira
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 7 — PERFORMANCE
+═══════════════════════════════════════ -->
+<div class="screen" id="perf-screen">
+  <div class="top-bar">
+    <div class="logo">Deep<span>Work</span> OS</div>
+    <div class="live-time" id="clock-perf">—</div>
+  </div>
+  <div class="perf-tabs">
+    <div class="perf-tab active" onclick="switchPerfTab('day')"  id="ptab-day">Today</div>
+    <div class="perf-tab"        onclick="switchPerfTab('week')" id="ptab-week">This week</div>
+    <div class="perf-tab"        onclick="switchPerfTab('month')" id="ptab-month">Month</div>
+  </div>
+  <div class="scroll-content" id="perf-content"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     BOTTOM NAV (shown after day starts)
+═══════════════════════════════════════ -->
+<div class="bottom-nav" id="bottom-nav">
+  <button class="nav-btn active" id="nav-focus" onclick="navTo('focus')">
+    <span class="nav-icon">⏱</span>Focus
+  </button>
+  <button class="nav-btn" id="nav-log" onclick="navTo('logbook')">
+    <span class="nav-icon">📓</span>Log
+  </button>
+  <button class="nav-btn" id="nav-perf" onclick="navTo('perf')">
+    <span class="nav-icon">📈</span>Stats
+  </button>
+  <button class="nav-btn" id="nav-end" onclick="showDebrief()">
+    <span class="nav-icon">🌙</span>End day
+  </button>
+</div>
+
+<!-- DRIFT WARNING OVERLAY -->
+<div class="drift-warning" id="drift-warning">
+  <div class="drift-warning-card">
+    <div class="drift-warning-icon">📺</div>
+    <div class="drift-warning-title">Drift window open</div>
+    <div class="drift-time-left" id="drift-warning-time">40:00</div>
+    <div class="drift-warning-text">
+      YouTube + markets time. Fully sanctioned.<br>
+      Deep work resumes when this ends.
+    </div>
+    <button class="btn btn-ghost btn-lg" onclick="closeDriftWarning()">Got it, I'll watch the clock</button>
+  </div>
+</div>
+
+<!-- INTERRUPT BANNER -->
+<div class="interrupt-banner" id="interrupt-banner"></div>
+
+<!-- NUDGE BAR -->
+<div class="nudge-bar" id="nudge-bar">
+  <div class="nudge-text" id="nudge-text">You're in deep work. <strong>Drift window opens soon.</strong></div>
+  <button class="nudge-close" onclick="closeNudge()">✕</button>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
